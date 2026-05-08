@@ -40,78 +40,63 @@ entity ALU is
 end ALU;
 
 architecture Behavioral of ALU is
-    signal c_result9 : unsigned(8 downto 0);
-    signal c_result  : std_logic_vector(7 downto 0);
 begin
 
     process(i_A, i_B, i_op)
-        variable v_a_signed : signed(7 downto 0);
-        variable v_b_signed : signed(7 downto 0);
-        variable v_r_signed : signed(7 downto 0);
+        variable v_result9 : unsigned(8 downto 0);
+        variable v_result  : std_logic_vector(7 downto 0);
+        variable v_flags   : std_logic_vector(3 downto 0);
     begin
-        c_result9 <= (others => '0');
-        c_result  <= (others => '0');
-        o_flags   <= (others => '0');
-
-        v_a_signed := signed(i_A);
-        v_b_signed := signed(i_B);
+        v_result9 := (others => '0');
+        v_result  := (others => '0');
+        v_flags   := (others => '0');
 
         case i_op is
             when "000" => -- ADD
-                c_result9 <= ('0' & unsigned(i_A)) + ('0' & unsigned(i_B));
-                c_result  <= std_logic_vector(unsigned(i_A) + unsigned(i_B));
+                v_result9 := ('0' & unsigned(i_A)) + ('0' & unsigned(i_B));
+                v_result  := std_logic_vector(v_result9(7 downto 0));
 
             when "001" => -- SUBTRACT
-                c_result9 <= ('0' & unsigned(i_A)) - ('0' & unsigned(i_B));
-                c_result  <= std_logic_vector(unsigned(i_A) - unsigned(i_B));
+                v_result9 := ('0' & unsigned(i_A)) - ('0' & unsigned(i_B));
+                v_result  := std_logic_vector(v_result9(7 downto 0));
 
             when "010" => -- AND
-                c_result <= i_A and i_B;
+                v_result := i_A and i_B;
 
             when "011" => -- OR
-                c_result <= i_A or i_B;
+                v_result := i_A or i_B;
 
             when others =>
-                c_result <= (others => '0');
+                v_result := (others => '0');
         end case;
 
-        v_r_signed := signed(c_result);
+        -- NZCV flags
+        v_flags(3) := v_result(7); -- N
 
-        -- N flag
-        o_flags(3) <= c_result(7);
-
-        -- Z flag
-        if c_result = "00000000" then
-            o_flags(2) <= '1';
+        if v_result = "00000000" then
+            v_flags(2) := '1'; -- Z
         else
-            o_flags(2) <= '0';
+            v_flags(2) := '0';
         end if;
 
-        -- C flag
         if i_op = "000" or i_op = "001" then
-            o_flags(1) <= c_result9(8);
+            v_flags(1) := v_result9(8); -- C
         else
-            o_flags(1) <= '0';
+            v_flags(1) := '0';
         end if;
 
-        -- V flag
         if i_op = "000" then
-            if (i_A(7) = i_B(7)) and (c_result(7) /= i_A(7)) then
-                o_flags(0) <= '1';
-            else
-                o_flags(0) <= '0';
+            if (i_A(7) = i_B(7)) and (v_result(7) /= i_A(7)) then
+                v_flags(0) := '1'; -- V
             end if;
         elsif i_op = "001" then
-            if (i_A(7) /= i_B(7)) and (c_result(7) /= i_A(7)) then
-                o_flags(0) <= '1';
-            else
-                o_flags(0) <= '0';
+            if (i_A(7) /= i_B(7)) and (v_result(7) /= i_A(7)) then
+                v_flags(0) := '1'; -- V
             end if;
-        else
-            o_flags(0) <= '0';
         end if;
-    end process;
 
-    o_result <= c_result;
+        o_result <= v_result;
+        o_flags  <= v_flags;
+    end process;
 
 end Behavioral;
