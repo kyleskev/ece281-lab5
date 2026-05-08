@@ -79,8 +79,14 @@ begin
             v_flags(2) := '0';
         end if;
 
-        if i_op = "000" or i_op = "001" then
-            v_flags(1) := v_result9(8); -- C
+        if i_op = "000" then
+            v_flags(1) := v_result9(8); -- carry
+        elsif i_op = "001" then
+            if unsigned(i_A) >= unsigned(i_B) then
+                v_flags(1) := '1'; -- no borrow
+            else
+                v_flags(1) := '0'; -- borrow occurred
+            end if;
         else
             v_flags(1) := '0';
         end if;
